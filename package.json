@@ -1,0 +1,24 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "Nexus Gaming Series Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexusgamingseries/bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nexusgamingseries/bot/issues"
+  },
+  "homepage": "https://github.com/nexusgamingseries/bot#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "discord.js": "^11.4.2",
+    "express": "^4.16.4"
+  }
+}
