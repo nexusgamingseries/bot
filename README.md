@@ -4,7 +4,7 @@ Custom bot, built in discord.js, for use with NGS' Discord server.
 ## Getting Started
 
 ### Prerequisites
-- Node.js and NPM installation, you may need some extra peices for a few dependencies namely enmap check here for more (https://enmap.evie.codes/install)
+- Node.js and NPM installation, you may need some extra pieces for a few dependencies namely enmap check here for more (https://enmap.evie.codes/install)
 
 ## Installing
 ### Checkout the Code
