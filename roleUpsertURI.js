@@ -1,4 +1,5 @@
 // req - HTTP request, res - http response, client -- the discord client , not a part of the HTTP contract but needed here
+//TODO: secure URI
 function roleUpsert(req, res, client) {
     //parse some variables from the request
     let role = req.query.role;

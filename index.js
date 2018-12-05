@@ -1,14 +1,18 @@
 const Discord = require('discord.js');
-//hide our secret sauce here.
-const token = require('./token-file');
+const config = require('./config');
+
 //these are required for web server and exposing URIs
 const express = require('express');
 const bodyParser = require('body-parser');
 //require function for the URI code.
 const upsertRole = require('./roleUpsertURI');
+//these are required for loading in the commands and events from file
+const {
+    promisify
+} = require("util");
+const readdir = promisify(require("fs").readdir);
+const Enmap = require("enmap");
 
-//create the client
-const client = new Discord.Client();
 //this creates an express variable for running our webserver
 const app = express();
 //the following are parsers for the different type of requests we might take get/post and the data that comes with em
@@ -30,28 +34,68 @@ app.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
 });
 
-//this sets up a "GET" uri at the provided route and runs the provided function when it's called
-app.get('/upsertRole', upsertRole(req, res, client));
+//create the discord client
+const client = new Discord.Client();
 
-//the below is some testing code -- i have found some reference material for moving these actions into their own files so we can avoid index glut,
-//TODO, create the index in such a way that the actions go into their own files.
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+client.config = config;
+//'./logs.txt'
+client.logger = require('logger').createLogger();
+
+//bootstrapping the functions module
+require("./modules/functions.js")(client);
+
+// Aliases and commands are put in collections where they can be read from,
+// catalogued, listed, etc.
+client.commands = new Enmap();
+client.aliases = new Enmap();
+
+// Now we integrate the use of Evie's awesome Enhanced Map module, which
+// essentially saves a collection to disk. This is great for per-server configs,
+// and makes things extremely easy for this purpose.
+client.settings = new Enmap({
+    name: "settings"
 });
 
-//message responds to messages ... needs it's own condition file
-client.on('message', msg => {
-    if (msg.content === 'ping') {
-        msg.reply('Pong!');
+const init = async() => {
+
+    // Here we load **commands** into memory, as a collection, so they're accessible
+    // here and everywhere else.
+    const cmdFiles = await readdir("./commands/");
+    client.logger.log(`Loading a total of ${cmdFiles.length} commands.`);
+    cmdFiles.forEach(f => {
+        if (!f.endsWith(".js")) return;
+        const response = client.loadCommand(f);
+        if (response) console.log(response);
+    });
+
+    // Then we load events, which will include our message and ready event.
+    const evtFiles = await readdir("./events/");
+    client.logger.log(`Loading a total of ${evtFiles.length} events.`);
+    evtFiles.forEach(file => {
+        const eventName = file.split(".")[0];
+        client.logger.log(`Loading Event: ${eventName}`);
+        const event = require(`./events/${file}`);
+        // Bind the client to any event, before the existing arguments
+        // provided by the discord.js event. 
+        // This line is awesome by the way. Just sayin'.
+        client.on(eventName, event.bind(null, client));
+    });
+
+    // Generate a cache of client permissions for pretty perm names in commands.
+    client.levelCache = {};
+    for (let i = 0; i < client.config.permLevels.length; i++) {
+        const thisLevel = client.config.permLevels[i];
+        client.levelCache[thisLevel.name] = thisLevel.level;
     }
-});
 
-//hopefully we can use this to track peoples discord handle changing so that we can keep up to date information -- otherwise our automation of role update might fail
-client.on('guildMemberUpdate', (oldMember, newMember) => {
-    //this even fires when someone updates their nickname.
-    console.log('I caught you updating your user! 5 ', oldMember, newMember);
-})
+    // Here we login the client.
+    client.login(client.config.token);
+
+    // End top-level async/await function.
+};
+
+init();
 
 
-
-client.login(token.lordBotswana);
+//this sets up a "GET" uri at the provided route and runs the provided function when it's called
+app.get('/upsertRole', (req, res) => { upsertRole(req, res, client) });
