@@ -39,7 +39,7 @@ const client = new Discord.Client();
 
 client.config = config;
 //'./logs.txt'
-client.logger = require('logger').createLogger();
+client.logger = require('./modules/Logger');
 
 //bootstrapping the functions module
 require("./modules/functions.js")(client);
