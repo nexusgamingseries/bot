@@ -5,7 +5,7 @@ const config = require('./config');
 const express = require('express');
 const bodyParser = require('body-parser');
 //require function for the URI code.
-const upsertRole = require('./roleUpsertURI');
+const upsertRole = require('./web-uri/roleUpsertURI');
 //these are required for loading in the commands and events from file
 const {
     promisify
