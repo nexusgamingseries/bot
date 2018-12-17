@@ -1,11 +1,9 @@
-// req - HTTP request, res - http response, client -- the discord client , not a part of the HTTP contract but needed here
-//TODO: secure URI
 function roleUpsert(req, res, client) {
     //parse some variables from the request
-    let role = req.query.role;
-    let user = req.query.user;
+    let role = req.body.role;
+    let user = req.body.user;
 
-    console.log('role ', role, 'user ', user);
+    // console.log('role ', role, 'user ', user);
     //this is role object, per discord documentation you need this blueprint to create a role
     let roleObject = {
             name: role,
@@ -19,19 +17,19 @@ function roleUpsert(req, res, client) {
     // "existingRole" - check in the roles and see if this role provided exists ... this will be a team name in this instance 
     let exRole = guild.roles.find(roleIt => roleIt.name == role);
 
-    console.log('existing role ', exRole);
+    // console.log('existing role ', exRole);
 
     //check the client and see if the user exists in the client, we can get their ID which makes finding them in the guild easier.
     let usr = client.users.find(usrIt => {
         return usrIt.username == user;
     });
 
-    console.log('FOUND USER ', usr);
+    // console.log('FOUND USER ', usr);
 
     //once we have the user id get the guild member (this is actually what we use to update the role, roles are GUILD specific)
     let guildMember = guild.members.get(usr.id);
 
-    console.log('guild member ', guildMember);
+    // console.log('guild member ', guildMember);
 
     //was the role in the guild?
     if (exRole == undefined || exRole == null) {

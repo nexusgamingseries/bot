@@ -1,11 +1,16 @@
 const Discord = require('discord.js');
 const config = require('./config');
+const token = require('./token-file');
 
 //these are required for web server and exposing URIs
 const express = require('express');
 const bodyParser = require('body-parser');
+
 //require function for the URI code.
+const authorize = require('./web-uri/authorize');
 const upsertRole = require('./web-uri/roleUpsertURI');
+const scheduleAutomation = require('./web-uri/scheduleAutomaton2');
+
 //these are required for loading in the commands and events from file
 const {
     promisify
@@ -97,5 +102,7 @@ const init = async() => {
 init();
 
 
+app.use(authorize);
 //this sets up a "GET" uri at the provided route and runs the provided function when it's called
-app.get('/upsertRole', (req, res) => { upsertRole(req, res, client) });
+app.post('/upsertRole', (req, res) => { upsertRole(req, res, client) });
+app.post('/schedule', (req, res) => { scheduleAutomation(req, res, client); })
