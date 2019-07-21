@@ -1,3 +1,5 @@
+const moment = require('moment-timezone');
+
 returnByPath = function(obj, path) {
     //path is a string representing a dot notation object path;
     //create an array of the string for easier manipulation
@@ -65,7 +67,15 @@ returnBoolByPath = function(obj, path) {
     return !!retVal;
 }
 
+function prettyTime(time, timeZone, format) {
+    time = parseInt(time);
+    timeZone = timeZone || 'America/New_York';
+    let localMoment = moment(time).tz(timeZone);
+    return localMoment.format(format);
+}
+
 module.exports = {
     returnBoolByPath: returnBoolByPath,
-    returnByPath: returnByPath
+    returnByPath: returnByPath,
+    prettyTime: prettyTime
 };

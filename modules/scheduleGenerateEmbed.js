@@ -1,38 +1,38 @@
 const util = require('../utils');
 
-function generateEmbed(sched) {
+function generateEmbed(sched, imgString) {
     let coast = sched.coast ? sched.coast : '';
-    let title = 'Division ' + sched.division + ' ' + coast + ' : Match Announcement!'; // Data From Post
-    let description = "Season " + sched.season + " Week " + sched.week + " : Match Up!"; //Data from post
-    let matchURL = sched.matchUrl; //link to match from post
+    // let title = 'Division ' + sched.divisionConcat + ' ' + coast + ' : Match Announcement!'; // Data From Post
+    let title = 'Division ' + sched.divisionDisplayName + ' : Match Announcement!';
+    let description = "Season " + sched.season + " Week " + sched.round + " : Match Up!"; //Data from post
+    // TODO - match URL
+    // let matchURL = sched.matchUrl; //link to match from post
     let teamA = {};
-    teamA.name = sched.homeTeam.name; //data from post
-    teamA.details = "[ # " + sched.homeTeam.standing + " : ( " + sched.homeTeam.win + " - " + sched.homeTeam.loss + ")](" + sched.homeTeam.url + ")";
+    teamA.name = sched.home.teamName; //data from post
+    teamA.details = "[ # " + sched.home.standing + " : ( " + sched.home.win + " - " + sched.home.loss + ")](" + process.env.ngsTLD + process.env.ngsTeamPage + routeFriendlyTeamName(sched.home.teamName) + ")";
 
     let teamB = {};
-    teamB.name = sched.awayTeam.name; //data from post
-    teamB.details = "[ # " + sched.awayTeam.standing + " : ( " + sched.awayTeam.win + " - " + sched.awayTeam.loss + ")](" + sched.awayTeam.url + ")";
+    teamB.name = sched.away.teamName; //data from post
+    teamB.details = "[ # " + sched.away.standing + " : ( " + sched.away.win + " - " + sched.away.loss + ")](" + process.env.ngsTLD + process.env.ngsTeamPage + routeFriendlyTeamName(sched.away.teamName) + ")";
 
-    let modifiedTime = sched.matchDetails.startingTimeEST;
-    modifiedTime = modifiedTime.split(':');
-    modifiedTime[0] = modifiedTime[0] - 3;
-    modifiedTime = modifiedTime.join(':');
-    let startingTime = "Starting Time: " + sched.matchDetails.startingTimeEST + " EST; " + modifiedTime + " PST"; //data from post
+    let startingTime = "Starting Time: " + util.prettyTime(sched.scheduledTime.startTime, null, 'hh:MM') + " EST; " + util.prettyTime(sched.scheduledTime.startTime, 'America/Los_Angeles', 'hh:MM') + " PST"; //data from post
 
     let caster = {};
     if (util.returnBoolByPath(sched, 'casterDetails')) {
         caster.name = "Caster: " + sched.casterDetails.name; //data from post -- NOT INCLUDED IF NOT PRESENT
         caster.link = "[Link](" + sched.casterDetails.link + ")"; //data from post -- NOT INCLUDED IF NOT PRESENT
     }
-    let imgString = sched.homeTeam.name + sched.awayTeam.name + sched.matchDetails.date + '.png';
-    let reg = new RegExp(/\s/, 'g');
-    imgString = imgString.replace(reg, '');
+    // let imgString = sched.home.teamName + sched.away.teamName + sched.scheduledTime.startTime + '.png';
+    // let reg = new RegExp(/\s/, 'g');
+    // imgString = imgString.replace(reg, '');
+
+    // console.log('imgString in genEmbed ', imgString);
 
     //stubbing out an embed
     const embed = {
         "title": title,
         "description": description,
-        "url": matchURL,
+        // "url": matchURL,  -- currently no match URL
         "color": 1623685, //change to NGS color
         "footer": {
             "icon_url": "attachment://footer.png", //NGS logo
@@ -61,10 +61,10 @@ function generateEmbed(sched) {
         ]
     };
 
-    if (util.returnBoolByPath(sched, 'casterDetails')) {
+    if (util.returnBoolByPath(sched, 'casterName')) {
         embed.fields.push({
-            "name": caster.name,
-            "value": caster.link
+            "name": sched.casterName,
+            "value": sched.casterUrl
         });
     }
 
@@ -72,3 +72,114 @@ function generateEmbed(sched) {
 
 }
 module.exports = generateEmbed;
+
+function routeFriendlyTeamName(teamname) {
+    if (teamname != null && teamname != undefined) {
+        let strArr = [];
+        for (let i = 0; i < teamname.length; i++) {
+            strArr.push(teamname.charAt(i));
+        }
+        strArr.forEach((char, index) => {
+            strArr[index] = replace(char);
+        });
+        return strArr.join('');
+    } else {
+        return '';
+    }
+}
+
+function replace(char) {
+    let ind = mapIndexOf(char);
+    if (ind > -1) {
+        return reserveCharacterMap[ind].replace;
+    } else {
+        return char;
+    }
+}
+
+function mapIndexOf(char) {
+    let ind = -1;
+    reserveCharacterMap.forEach((map, index) => {
+        if (map.char === char) {
+            ind = index;
+        }
+    })
+    return ind;
+}
+
+const reserveCharacterMap = [
+
+    {
+        "char": "(",
+        "replace": "-open-parentheses-"
+    },
+    {
+        "char": ")",
+        "replace": "-close-parentheses-"
+    },
+    {
+        "char": "{",
+        "replace": "-open-curl-bracket-"
+    },
+    {
+        "char": "}",
+        "replace": "-close-curl-bracket-"
+    },
+    {
+        "char": ";",
+        "replace": "-semicolon-"
+    },
+    {
+        "char": "=",
+        "replace": "-equals-"
+    },
+    {
+        "char": "+",
+        "replace": "-plus-"
+    },
+    {
+        "char": "/",
+        "replace": "-forwardslash-"
+    },
+    {
+        "char": "?",
+        "replace": "-question-"
+    },
+    {
+        "char": "#",
+        "replace": "-number-"
+    },
+    {
+        "char": "[",
+        "replace": "-open-bracket-"
+    },
+    {
+        "char": "]",
+        "replace": "-close-bracket-"
+    },
+    {
+        "char": "%",
+        "replace": "-percent-"
+    },
+    {
+        "char": "^",
+        "replace": "-caret-"
+    },
+    {
+        "char": "`",
+        "replace": "-backtick-"
+    },
+    {
+        "char": "\\",
+        "replace": "-backslash-"
+    },
+    {
+        "char": " ",
+        "replace": "_"
+    },
+    {
+        "char": "|",
+        "replace": "-pipe-"
+    },
+
+];

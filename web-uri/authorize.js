@@ -1,8 +1,9 @@
 const token = require('../token-file');
 
 function authorize(req, res, next) {
-
-    if (req.body.secret == token.secret) {
+    let secret = req.body.secret || req.query.secret;
+    console.log('secret ', secret);
+    if (secret == process.env.discordAPItoken) {
         next();
     } else {
         res.status(401).send('Unauthorized.');

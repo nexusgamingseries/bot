@@ -103,6 +103,8 @@ init();
 
 
 app.use(authorize);
-//this sets up a "GET" uri at the provided route and runs the provided function when it's called
+//this sets up a "POST" uri at the provided route and runs the provided function when it's called
 app.post('/upsertRole', (req, res) => { upsertRole(req, res, client) });
-app.post('/schedule', (req, res) => { scheduleAutomation(req, res, client); })
+app.post('/schedule', (req, res) => {
+    scheduleAutomation(req, res, client);
+})

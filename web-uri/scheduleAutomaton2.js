@@ -8,9 +8,8 @@ const fs = require('fs');
 const generateEmbed = require('../modules/scheduleGenerateEmbed');
 
 
-const defaultUrl = 'http://ngs.com';
-const defaultTeamA = 'img/teamAdefault.png';
-const defaultTeamB = 'img/teamBdefault.png';
+const defaultTeamA = process.env.heroProfileImage + 'defaultTeamLogo.png';
+const defaultTeamB = process.env.heroProfileImage + 'defaultTeamLogo.png';
 const thumbnail = 'img/NGS-thumbnail.png';
 const footer = 'img/ngsFooter.png';
 
@@ -23,12 +22,13 @@ function schedulePoster(req, res, client) {
     if (recSchedules != undefined && recSchedules != null && recSchedules.length > 0) {
         //sort schedules?
         recSchedules = recSchedules.sort(function(a, b) {
-            let divisionA = util.returnByPath(a, 'division');
-            let divisionB = util.returnByPath(b, 'division');
+            let divisionA = parseInt(util.returnByPath(a, 'divSort'));
+            let divisionB = parseInt(util.returnByPath(b, 'divSort'));
+            console.log(divisionA, divisionB)
             if (divisionA > divisionB) {
-                return 1;
-            } else {
                 return -1;
+            } else {
+                return 1;
             }
         });
 
@@ -49,14 +49,13 @@ module.exports = schedulePoster;
 function processQueue(queue, client) {
     let promArr = [];
     queue.forEach(sched => {
-        let embed = generateEmbed(sched);
-        let f = async(sched, embed) => {
+        let f = async(sched) => {
             let imgFile = await generateImages(sched);
-            console.log(imgFile);
-            console.log(embed.image.url);
+            let embed = generateEmbed(sched, imgFile);
+
             newEmbed = new Discord.RichEmbed(embed);
             // dispatch the embed out to the discord server
-            // console.log(newEmbed);
+            console.log(newEmbed);
             let msg = await client.channels.get('518953832890368004').send({
                 embed: newEmbed,
                 files: [{
@@ -79,16 +78,14 @@ function processQueue(queue, client) {
             });
             return msg;
         }
-        promArr.push(f(sched, embed));
+        promArr.push(f(sched));
     });
 
-    console.log(promArr);
-
     Promise.all(promArr).then(suc => {
-        console.log(suc);
+        console.log('suc ', suc);
         deleteFiles(suc);
     }, fail => {
-        console.log(fail);
+        console.log('fail ', fail);
         deleteFiles(fail);
     })
 
@@ -97,20 +94,24 @@ function processQueue(queue, client) {
 function deleteFiles(fileArray) {
     fileArray.forEach(file => {
         fs.unlink('img/' + file, (err) => {
-            console.log(err);
+            if (err) {
+                console.log(err);
+            }
         });
     });
 
 }
 
+function returnLogoUrl(logo) {
+    return process.env.heroProfileImage + encodeURIComponent(logo);
+}
+
 async function generateImages(sched) {
     // IMAGE PROCESSING 
     // will need the image URL of each team's logo
-    let homeLogo = util.returnBoolByPath(sched, 'homeTeam.logoUrl') ? sched.homeTeam.logoUrl : defaultTeamA;
-    let awayLogo = util.returnBoolByPath(sched, 'awayTeam.logoUrl') ? sched.awayTeam.logoUrl : defaultTeamB;
+    let homeLogo = util.returnBoolByPath(sched, 'home.logo') ? returnLogoUrl(sched.home.logo) : defaultTeamA;
+    let awayLogo = util.returnBoolByPath(sched, 'away.logo') ? returnLogoUrl(sched.away.logo) : defaultTeamB;
     var images = [homeLogo, 'img/vs-meger.png', awayLogo];
-    // console.log(images);
-    // console.log(homeLogo, awayLogo);
     let jimps = [];
 
     //create promise array of images.
@@ -129,10 +130,7 @@ async function generateImages(sched) {
     }).then(function(data) {
         return data;
     });
-    // console.log(imageMesh);
-    // let resolvedOK = true;
-    // let errorIndex = [];
-    // console.log(imageMesh);
+
     for (let i = 0; i < imageMesh.length; i++) {
         if (imageMesh[i] == null) {
             if (i == 0) {
@@ -152,11 +150,11 @@ async function generateImages(sched) {
     newImage.composite(imageMesh[2], 388, 0);
     newImage.composite(imageMesh[1], 195, 0);
 
-    let outFile = sched.homeTeam.name + sched.awayTeam.name + sched.matchDetails.date + '.png';
-    let reg = new RegExp(/\s/, 'g');
+    let outFile = sched.home.teamName + sched.away.teamName + sched.scheduledTime.startTime.toString();
+    let reg = new RegExp(/[^0-9a-zA-Z]+/, 'g');
     outFile = outFile.replace(reg, '');
+    outFile += '.png';
     const written = await newImage.writeAsync('img/' + outFile).then(suc => { return true; }, fail => { return false; });
 
-    console.log(written);
     return outFile;
 }
