@@ -6,7 +6,7 @@ function generateEmbed(sched, imgString) {
     let title = 'Division ' + sched.divisionDisplayName + ' : Match Announcement!';
     let description = "Season " + sched.season + " Week " + sched.round + " : Match Up!"; //Data from post
     // TODO - match URL
-    // let matchURL = sched.matchUrl; //link to match from post
+    let matchURL = process.env.ngsTLD + process.env.ngsMatchPage + sched.matchId; //link to match from post
     let teamA = {};
     teamA.name = sched.home.teamName; //data from post
     teamA.details = "[ # " + sched.home.standing + " : ( " + sched.home.win + " - " + sched.home.loss + ")](" + process.env.ngsTLD + process.env.ngsTeamPage + routeFriendlyTeamName(sched.home.teamName) + ")";
@@ -15,7 +15,7 @@ function generateEmbed(sched, imgString) {
     teamB.name = sched.away.teamName; //data from post
     teamB.details = "[ # " + sched.away.standing + " : ( " + sched.away.win + " - " + sched.away.loss + ")](" + process.env.ngsTLD + process.env.ngsTeamPage + routeFriendlyTeamName(sched.away.teamName) + ")";
 
-    let startingTime = "Starting Time: " + util.prettyTime(sched.scheduledTime.startTime, null, 'hh:MM') + " EST; " + util.prettyTime(sched.scheduledTime.startTime, 'America/Los_Angeles', 'hh:MM') + " PST"; //data from post
+    let startingTime = "Starting Time: " + util.prettyTime(sched.scheduledTime.startTime, null, 'hh:mm') + " EST; " + util.prettyTime(sched.scheduledTime.startTime, 'America/Los_Angeles', 'hh:mm') + " PST"; //data from post
 
     let caster = {};
     if (util.returnBoolByPath(sched, 'casterDetails')) {
@@ -32,7 +32,7 @@ function generateEmbed(sched, imgString) {
     const embed = {
         "title": title,
         "description": description,
-        // "url": matchURL,  -- currently no match URL
+        "url": matchURL,
         "color": 1623685, //change to NGS color
         "footer": {
             "icon_url": "attachment://footer.png", //NGS logo
@@ -63,8 +63,8 @@ function generateEmbed(sched, imgString) {
 
     if (util.returnBoolByPath(sched, 'casterName')) {
         embed.fields.push({
-            "name": sched.casterName,
-            "value": sched.casterUrl
+            "name": 'Casted By: ' + sched.casterName,
+            "value": 'https://' + sched.casterUrl
         });
     }
 
